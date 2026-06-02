@@ -1,0 +1,26 @@
+name: X Twitter Monitor
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'     # 每20分钟运行一次
+  workflow_dispatch:           # 支持手动测试
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Run Twitter Monitor
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+        run: python monitor.py
