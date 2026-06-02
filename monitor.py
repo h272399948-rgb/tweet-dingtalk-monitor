@@ -1,44 +1,31 @@
-import feedparser
 import requests
 import os
 from datetime import datetime
 
-# ================== 配置区 ==================
 WEBHOOK = os.getenv('DINGTALK_WEBHOOK')
 
-USERS = ["aleabitoreddit", "thankUcrypto", "Jackyi_ld", "0xcryptowizard", "superexvip"]
+print("=== 开始测试 ===")
+print("Webhook 长度:", len(WEBHOOK) if WEBHOOK else "空！")
 
-# 推荐使用 rss.app（更稳定），请替换成你自己的RSS链接
-RSS_BASE = "https://rss.app/feeds/"   # ← 如果你有rss.app账号可以改成你的
+if not WEBHOOK:
+    print("❌ Webhook 未加载，请检查 Secrets")
+else:
+    text = f"X 钉钉测试消息 {datetime.now().strftime('%H:%M:%S')}\nGitHub Actions 正在测试推送功能"
 
-seen = set()   # 防止重复推送
-# ===========================================
-
-def send_to_dingtalk(user, title, link, summary):
-    text = f"X 新推文！\n\n账号：@{user}\n时间：{datetime.now().strftime('%m-%d %H:%M')}\n\n标题：{title}\n\n摘要：{summary[:280]}...\n\n🔗 链接：{link}"
-    
     data = {
         "msgtype": "text",
         "text": {"content": text}
     }
-    try:
-        requests.post(WEBHOOK, json=data, timeout=10)
-        print(f"✅ 已推送 @{user} 的推文")
-    except:
-        print(f"❌ 推送失败 @{user}")
 
-for username in USERS:
-    # 使用 RSSHub（免费公开服务）
-    rss_url = f"https://rsshub.app/twitter/user/{username}"
-    print(f"正在检查 @{username}")
-    
-    feed = feedparser.parse(rss_url)
-    
-    for entry in feed.entries[:2]:      # 每次最多取最新2条
-        post_id = entry.get('id') or entry.link
-        if post_id not in seen:
-            seen.add(post_id)
-            title = entry.title or "无标题"
-            summary = entry.description or entry.summary or "无内容"
-            link = entry.link
-            send_to_dingtalk(username, title, link, summary)
+    try:
+        r = requests.post(WEBHOOK, json=data, timeout=15)
+        print("状态码:", r.status_code)
+        print("返回内容:", r.text)
+        if r.status_code == 200:
+            print("✅ 推送请求已发送，请检查钉钉")
+        else:
+            print("❌ 钉钉返回错误")
+    except Exception as e:
+        print("❌ 请求异常:", str(e))
+
+print("=== 测试结束 ===")
