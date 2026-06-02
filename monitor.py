@@ -5,7 +5,6 @@ from datetime import datetime
 
 WEBHOOK = os.getenv('DINGTALK_WEBHOOK')
 
-# 你的5个账号对应的 RSS 链接
 RSS_FEEDS = {
     "aleabitoreddit": "https://rss.app/r/feed/dCRFqvMPbt99MRjT",
     "thankUcrypto": "https://rss.app/feeds/ELLWvZlaubXflZWJ.xml",
@@ -21,25 +20,30 @@ def send_to_dingtalk(user, title, link, summary):
     data = {"msgtype": "text", "text": {"content": text}}
     try:
         requests.post(WEBHOOK, json=data, timeout=10)
-        print(f"✅ 推送成功 @{user}")
+        print(f"✅ 推送 @{user}")
     except:
         print(f"❌ 推送失败 @{user}")
 
-print("=== X 推文监控启动（rss.app 稳定版） ===")
+print("=== X 推文监控启动（仅本人推文） ===")
 
 for username, rss_url in RSS_FEEDS.items():
     print(f"检查 @{username}")
     try:
         feed = feedparser.parse(rss_url)
-        for entry in feed.entries[:3]:          # 检查最新3条
-            post_id = entry.get('id') or entry.link
+        for entry in feed.entries[:5]:
+            title = entry.title or ""
+            link = entry.link
+            summary = entry.get('description') or entry.get('summary') or ""
+            post_id = entry.get('id') or link
+            
+            # 重要过滤：只保留该账号自己发的推文（排除别人@的）
+            if username.lower() not in title.lower() and username.lower() not in summary.lower():
+                continue
+                
             if post_id and post_id not in seen:
                 seen.add(post_id)
-                title = entry.title or "无标题"
-                summary = entry.get('description') or entry.get('summary') or "无内容"
-                link = entry.link
                 send_to_dingtalk(username, title, link, summary)
-                print(f"发现新推文 @{username}")
+                print(f"发现 @{username} 本人新推文")
     except Exception as e:
         print(f"@{username} 检查出错: {e}")
 
