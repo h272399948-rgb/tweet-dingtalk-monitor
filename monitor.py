@@ -2,23 +2,37 @@ import requests
 import os
 from datetime import datetime
 
-DINGTALK_WEBHOOK = os.getenv("DINGTALK_WEBHOOK")
+print("="*50)
+print(f"[{datetime.now()}] 调试信息开始")
+print(f"DINGTALK_WEBHOOK 是否存在: {'是' if os.getenv('DINGTALK_WEBHOOK') else '否 ❌'}")
 
-print(f"[{datetime.now()}] 🚀 测试脚本启动")
-
-if not DINGTALK_WEBHOOK:
-    print("❌ 未找到 DINGTALK_WEBHOOK")
+webhook = os.getenv("DINGTALK_WEBHOOK")
+if webhook:
+    print(f"Webhook 长度: {len(webhook)}")
+    print(f"Webhook 开头: {webhook[:60]}...")
 else:
+    print("❌ 未读取到 DINGTALK_WEBHOOK，请检查 Secrets 设置")
+
+# 测试推送
+if webhook:
     data = {
-        "msgtype": "markdown",
-        "markdown": {
-            "title": "✅ 测试成功！",
-            "text": f"**GitHub Actions 监控脚本测试成功**\n\n当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n这是第一条测试消息，证明钉钉推送正常。\n\n后续会添加真实推文监控。"
+        "msgtype": "text",
+        "text": {
+            "content": f"🧪 GitHub Actions 测试推送\n时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n如果看到这条消息，说明配置成功！"
         }
     }
-    r = requests.post(DINGTALK_WEBHOOK, json=data)
-    print("推送状态码:", r.status_code)
-    if r.status_code == 200:
-        print("✅ 钉钉推送成功！")
-    else:
-        print("❌ 推送失败", r.text)
+    try:
+        r = requests.post(webhook, json=data, timeout=10)
+        print(f"推送状态码: {r.status_code}")
+        print(f"返回内容: {r.text}")
+        if r.status_code == 200:
+            print("✅ 推送请求已发送成功")
+        else:
+            print("❌ 推送失败")
+    except Exception as e:
+        print("❌ 请求异常:", e)
+else:
+    print("跳过推送")
+
+print("调试结束")
+print("="*50)
